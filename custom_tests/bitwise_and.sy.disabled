@@ -1,0 +1,166 @@
+int powtab[32] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824, -2147483648};
+
+/*
+int bitwise_and(int a, int b) {
+    int d = 0x80000000;
+    int result = 0;
+
+    while(d != 0) {
+        if (a>=d && b>=d) result = result + d;
+        if (a >= d) a = a-d;
+        if (b >= d) b = b-d;
+        d = d/2;
+    }
+
+    return result;
+}
+*/
+
+int asr(int a, int w) {
+    if (w >= 31) {
+        if (a < 0) {
+            a = -1;
+        } else {
+            a = 0;
+        }
+    } else if (w > 0) {
+        if (a < 0) {
+            //a = a + 0x80000000;
+            a = a + -2147483648;
+            a = a / powtab[w];
+            a = a - powtab[31-w];
+        } else {
+            a = a / powtab[w];
+        }
+    }
+    return a;
+}
+
+int lsr(int a, int w) {
+    if (w >= 31) {
+        a = 0;
+    } else if (w > 0) {
+        if (a < 0) {
+            //a = a + 0x80000000;
+            a = a + -2147483648;
+            a = a / powtab[w];
+            a = a - powtab[31-w];
+        } else {
+            a = a / powtab[w];
+        }
+    }
+    return a;
+}
+
+/*
+int and(int a, int b) {
+    int c = 0, x = 0;
+    while (x <= 31) {
+        c = c + c;
+        if (a < 0) {
+            if (b < 0) {
+                c = c + 1;
+            }
+        }
+        putint(a); putch(10);
+        putint(b); putch(10);
+        a = a + a;
+        b = b + b;
+        x = x + 1;
+    }
+    return c;
+}
+*/
+
+int and(int x, int y) {
+    int n = 0, res = 0;
+
+    while (n < 31) {
+        if (x % 2 == 1 && y % 2 == 1) {
+            res = res + powtab[n];
+        }
+        x = x/2;
+        y = y/2;
+        n = n+1;
+    }
+
+    return res;
+}
+
+int xor(int x, int y) {
+    int n = 0, res = 0;
+
+    while (n < 31) {
+        if (x % 2 != y % 2) {
+            res = res + powtab[n];
+        }
+        x = x/2;
+        y = y/2;
+        n = n+1;
+    }
+
+    return res;
+}
+
+int lsl(int x, int w) {
+    if (w > 31) return 0;
+    else return x*powtab[w];
+}
+
+//int and(int a, int b) { return a & b; }
+//int xor(int a, int b) { return a ^ b; }
+
+int add(int a, int b) {
+    int carry = and(a, b);
+    int result = xor(a, b);
+    while(carry != 0) {
+        int shifted_carry = lsl(carry, 1);
+        carry = and(result, shifted_carry);
+        result = xor(result, shifted_carry);
+    }
+    return result;
+}
+
+int mul(int a, int b) {
+    int t = b, res = 0;
+    if (b < 0) {
+        t = -b; // can try t = t*-1
+    }
+
+    while(t > 0) {
+        t = t-1;
+        res = add(res, a);
+    }
+
+    return res;
+}
+
+int power(int a, int p) {
+    int res = 1;    
+    while(p > 0) {
+        if (and(p, 1)) {
+            res = mul(res, a);
+        }
+        a = mul(a,a);
+        p = asr(p, 1);
+    }
+    return res;
+}
+
+void two_powers() {
+    int p = 0;
+    while(p < 32) {
+        putint(power(2, p)); putch(10);
+        p = p + 1;
+    }
+}
+
+int main() {
+
+    two_powers();
+
+    //putint(and(1,1)); putch(10);
+    //putint(xor(5,0xa)); putch(10);
+
+    return 0;
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="Array&lt;*&gt;">
+    <DisplayString>{{ len={len} }}</DisplayString>
+    <Expand>
+      <Item Name="[length]" ExcludeView="simple">len</Item>
+      <Item Name="[capacity]" ExcludeView="simple">cap</Item>
+      <ArrayItems>
+        <Size>len</Size>
+        <ValuePointer>a</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>
