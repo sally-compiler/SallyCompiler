@@ -1,5 +1,3 @@
-Github地址：https://github.com/abrasumente233/SallyCompiler
-
 # SallyCompiler
 
 An optimizing toy compiler written in C++, that translates a minimal C-like language (SysY) into ARMv7 assembly.
