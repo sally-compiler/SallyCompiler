@@ -1,8 +1,8 @@
 
 void sysy_craziness(Program_IR *prog) {
-    for(auto f : prog->procedures) {
-        for(auto bb : f->blocks) {
-            for(int i = 0; i < bb->insts.len; i++) {
+    for (auto f : prog->procedures) {
+        for (auto bb : f->blocks) {
+            for (int i = 0; i < bb->insts.len; i++) {
                 auto v = bb->insts[i];
                 if (auto call = v->as<Function_Call>()) {
                     if (0 == strcmp(call->name, "_sysy_starttime") ||

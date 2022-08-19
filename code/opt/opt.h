@@ -5,9 +5,9 @@
 #include "../ir.h"
 
 struct Loop {
-    int32 depth         = -1;
+    int32 depth = -1;
     Basic_Block *header = NULL;
-    Basic_Block *exit   = NULL;
+    Basic_Block *exit = NULL;
     bool is_innermost = false;
     Loop *parent = NULL;
     Array<Loop *> sub_loops;
@@ -34,24 +34,21 @@ typedef OPT_PASS(Opt_Pass);
 
 inline void run_on_every_function(Program_IR *IR, Opt_Func_Pass pass);
 
-
 // @Cleanup
 /* Helper function for travelling in the CFG */
 inline void mark_all_blocks_unvisited(Array<Basic_Block *> blocks) {
-    for(auto bb : blocks) { bb->mark = 0; }
+    for (auto bb : blocks) {
+        bb->mark = 0;
+    }
 }
 
-inline bool bb_visited(Basic_Block *bb) {
-    return bb->mark;
-}
+inline bool bb_visited(Basic_Block *bb) { return bb->mark; }
 
-inline void mark_visited(Basic_Block *bb) {
-    bb->mark = 1;
-}
+inline void mark_visited(Basic_Block *bb) { bb->mark = 1; }
 
 inline void mark_all_values_as_unvisted(Procedure_IR *func_IR) {
-    for(auto bb : func_IR->blocks) {
-        for(auto v : bb->insts) {
+    for (auto bb : func_IR->blocks) {
+        for (auto v : bb->insts) {
             v->visited = false;
         }
     }

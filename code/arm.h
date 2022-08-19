@@ -35,20 +35,14 @@ enum Int_Reg : uint8 {
 };
 
 enum Operand_Tag {
-	//UNDEFINED,
-	SHAYEBUSHI,
-	REG, // physical register. allocated or preallocated
-	VREG, // virtual register, waiting to be allocated
-	IMM,
-	ADR_GLOBAL
+    // UNDEFINED,
+    SHAYEBUSHI,
+    REG,  // physical register. allocated or preallocated
+    VREG, // virtual register, waiting to be allocated
+    IMM,
+    ADR_GLOBAL
 };
-enum Shift_Tag {
-	Nothing,
-	LSL,
-	LSR,
-	ASR,
-	ASL
-};
+enum Shift_Tag { Nothing, LSL, LSR, ASR, ASL };
 
 struct MOperand {
     Operand_Tag tag = SHAYEBUSHI;
@@ -57,16 +51,18 @@ struct MOperand {
      * for tag == STACK, value is the imm offset to sp register
      * e.g. value=4 means [sp+4]
      */
-    int32 value; 
-	Shift_Tag s_tag = Nothing; // @TODO This doesn't belongs to an operand?
-	uint8 s_value = 0;
-	char* adr = NULL;
+    int32 value;
+    Shift_Tag s_tag = Nothing; // @TODO This doesn't belongs to an operand?
+    uint8 s_value = 0;
+    char *adr = NULL;
     MOperand() {}
-	MOperand(Operand_Tag tag, char* adr) : tag(tag), adr(adr) {};
-    MOperand(Operand_Tag tag, int32 value) : tag(tag), value(value) {};
-	MOperand(Operand_Tag tag, int32 value, Shift_Tag s_tag, uint8 s_value) : tag(tag), value(value), s_tag(s_tag), s_value(s_value) {};
+    MOperand(Operand_Tag tag, char *adr) : tag(tag), adr(adr){};
+    MOperand(Operand_Tag tag, int32 value) : tag(tag), value(value){};
+    MOperand(Operand_Tag tag, int32 value, Shift_Tag s_tag, uint8 s_value)
+        : tag(tag), value(value), s_tag(s_tag), s_value(s_value){};
     bool operator<(const MOperand &b) const {
-        if (tag != b.tag) return tag < b.tag;
+        if (tag != b.tag)
+            return tag < b.tag;
 
         if (tag == REG || tag == VREG || tag == IMM) {
             return value < b.value;
@@ -81,9 +77,12 @@ struct MOperand {
     }
 
     bool operator==(const MOperand &b) const {
-        if (tag != b.tag) return false;
-        if (tag == REG || tag == VREG || tag == IMM) return value == b.value;
-        if (tag == ADR_GLOBAL) return adr == b.adr;
+        if (tag != b.tag)
+            return false;
+        if (tag == REG || tag == VREG || tag == IMM)
+            return value == b.value;
+        if (tag == ADR_GLOBAL)
+            return adr == b.adr;
         assert(false);
         return false;
     }
@@ -92,7 +91,6 @@ struct MOperand {
 MOperand make_imm(int32 constant);
 MOperand make_reg(uint8 reg);
 MOperand make_vreg(int32 vreg_index);
-
 
 enum MI_Tag {
     MI_MOVE,
@@ -107,7 +105,6 @@ enum MI_Tag {
     MI_LOAD, // ldr
     MI_STORE // str
 };
-
 
 struct Machine_Block;
 /* Machine Instruction */
@@ -134,73 +131,77 @@ struct MI_Move : MI {
     MOperand src;
     bool neg = false; // mvn
 
-    MI_Move(MOperand dst, MOperand src) : MI(MI_MOVE), dst(dst), src(src) {};
+    MI_Move(MOperand dst, MOperand src) : MI(MI_MOVE), dst(dst), src(src){};
 };
 
 struct MI_Clz : MI {
     MOperand dst;
     MOperand operand;
 
-    MI_Clz() : MI(MI_CLZ) {};
+    MI_Clz() : MI(MI_CLZ){};
 };
-
 
 struct MI_Move_Pointer_Cmp {
     bool operator()(const MI_Move *lhs, const MI_Move *rhs) const {
-        if (!(lhs->dst == rhs->dst)) return (lhs->dst) < (rhs->dst);
-        if (!(lhs->neg == rhs->neg)) return (lhs->neg) < (rhs->neg);
+        if (!(lhs->dst == rhs->dst))
+            return (lhs->dst) < (rhs->dst);
+        if (!(lhs->neg == rhs->neg))
+            return (lhs->neg) < (rhs->neg);
         return (lhs->src) < (rhs->src);
     }
 };
 
 struct MI_Binary : MI {
     Binary_Op_Type op;
-    MOperand dst; 
+    MOperand dst;
     MOperand lhs, rhs;
 
-	MI_Binary() : MI(MI_BINARY) {}
-    MI_Binary(Binary_Op_Type op, MOperand dst, MOperand lhs, MOperand rhs) : 
-        MI(MI_BINARY), op(op), dst(dst), lhs(lhs), rhs(rhs) {};
+    MI_Binary() : MI(MI_BINARY) {}
+    MI_Binary(Binary_Op_Type op, MOperand dst, MOperand lhs, MOperand rhs)
+        : MI(MI_BINARY), op(op), dst(dst), lhs(lhs), rhs(rhs){};
 };
 
 struct MI_Compare : MI {
     MOperand lhs, rhs;
     bool neg = false;
 
-    MI_Compare(MOperand lhs, MOperand rhs) : 
-        MI(MI_COMPARE), lhs(lhs), rhs(rhs) {};
+    MI_Compare(MOperand lhs, MOperand rhs)
+        : MI(MI_COMPARE), lhs(lhs), rhs(rhs){};
 };
 
 struct MI_Func_Call : MI {
     const char *func_name;
     int arg_count = 0;
 
-    MI_Func_Call(const char *func_name) : MI(MI_FUNC_CALL), func_name(func_name) {};
+    MI_Func_Call(const char *func_name)
+        : MI(MI_FUNC_CALL), func_name(func_name){};
 };
 
 struct MI_Branch : MI {
     Machine_Block *true_target;
     Machine_Block *false_target;
 
-    MI_Branch() : MI(MI_BRANCH) {};
-    MI_Branch(Branch_Condition cond, Machine_Block *true_target, Machine_Block *false_target=NULL) : 
-        MI(MI_BRANCH, cond), true_target(true_target), false_target(false_target) {};
+    MI_Branch() : MI(MI_BRANCH){};
+    MI_Branch(Branch_Condition cond, Machine_Block *true_target,
+              Machine_Block *false_target = NULL)
+        : MI(MI_BRANCH, cond), true_target(true_target),
+          false_target(false_target){};
 };
 
 struct MI_Return : MI {
-    MI_Return() : MI(MI_RETURN) {};
+    MI_Return() : MI(MI_RETURN){};
 };
 
 // @note: the struct layout of MI_Push and MI_Pop
 // must be the same.
 struct MI_Push : MI {
     Array<MOperand> operands;
-    MI_Push() : MI(MI_PUSH) {};
+    MI_Push() : MI(MI_PUSH){};
 };
 
 struct MI_Pop : MI {
     Array<MOperand> operands;
-    MI_Pop() : MI(MI_POP) {};
+    MI_Pop() : MI(MI_POP){};
 };
 
 enum Mem_Tag {
@@ -220,8 +221,8 @@ struct MI_Load : MI {
     Mem_Tag mem_tag = MEM_UNDEFINED;
     MOperand reg;
     MOperand base;
-	MOperand offset;
-    MI_Load() : MI(MI_LOAD) {};
+    MOperand offset;
+    MI_Load() : MI(MI_LOAD){};
 };
 
 // str
@@ -229,8 +230,8 @@ struct MI_Store : MI {
     Mem_Tag mem_tag = MEM_UNDEFINED;
     MOperand reg;
     MOperand base;
-	MOperand offset;
-    MI_Store() : MI(MI_STORE) {};
+    MOperand offset;
+    MI_Store() : MI(MI_STORE){};
 };
 
 struct Machine_Block {
@@ -239,7 +240,8 @@ struct Machine_Block {
     MI *last_inst = NULL;
     MI *control_transfer_inst = NULL;
     Array<Machine_Block *> preds;
-    Array<Machine_Block *> succs; // at most two successors, can be optimized for @Performance
+    Array<Machine_Block *>
+        succs; // at most two successors, can be optimized for @Performance
 
     // for bb placement pass
     bool visited = false;
@@ -253,14 +255,14 @@ struct Machine_Block {
 
 struct Func_Asm {
     int vreg_count = 0;
-	int index;
-	int stack_size = 0;
+    int index;
+    int stack_size = 0;
     bool has_return_value = true;
     bool too_many_globals = false; // max_flow WA
 
-    const char* name;
+    const char *name;
     Array<Machine_Block *> mbs;
-	Array<const char *> global_value;
+    Array<const char *> global_value;
 
     Array<MI *> local_array_bases; // need to fixup sp of these
 };
@@ -282,7 +284,8 @@ bool is_caller_save(uint8 reg);
 
 void build_operand(String_Builder *s, MOperand op);
 void build_function_asm(String_Builder *s, Func_Asm *func);
-void build_program_asm(String_Builder *s, Program_Asm *pro, Array<Ast_Declaration *> globals);
+void build_program_asm(String_Builder *s, Program_Asm *pro,
+                       Array<Ast_Declaration *> globals);
 
 void print_operand(MOperand op);
 void print_function_asm(Func_Asm *func);

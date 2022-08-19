@@ -4,8 +4,8 @@
 // @Lame
 // This is copied from IR passes
 
-#include "../general.h"
 #include "../arm.h"
+#include "../general.h"
 
 #define ASM_FUNC_PASS(pass_name) void pass_name(Func_Asm *func_asm)
 typedef ASM_FUNC_PASS(Asm_Func_Pass);

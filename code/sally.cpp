@@ -1,10 +1,10 @@
-#include "general.h"
-#include "parser.h"
-#include "tokenizer.h"
-#include "ir.h"
-#include "opt/opt.h"
 #include "arm.h"
 #include "asm/asm_passes.h"
+#include "general.h"
+#include "ir.h"
+#include "opt/opt.h"
+#include "parser.h"
+#include "tokenizer.h"
 
 #include "cfg_viewer.h"
 
@@ -13,16 +13,15 @@
 
 void print_help(char *program) {
     printf("Usage: %s", program);
-    printf(" [ -h | --help ] [ -O2 ] [ -o <output-asm = build\\test.s> ] <input-file = code\\first.sy>\n");
+    printf(" [ -h | --help ] [ -O2 ] [ -o <output-asm = build\\test.s> ] "
+           "<input-file = code\\first.sy>\n");
 }
 
 std::string input_command;
 
-bool match(char *a, const char *b) {
-    return strcmp(a, b) == 0;
-}
+bool match(char *a, const char *b) { return strcmp(a, b) == 0; }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
     const char *source_file = "code/first.sy";
     const char *output_file = "build/test.s";
@@ -40,7 +39,8 @@ int main(int argc, char** argv) {
                 print_help(argv[0]);
                 return 0;
             }
-        } else if (match(argv[i], "-O2") || match(argv[i], "-O1") || match(argv[i], "-O")) {
+        } else if (match(argv[i], "-O2") || match(argv[i], "-O1") ||
+                   match(argv[i], "-O")) {
             enable_optimization = true;
         } else if (match(argv[i], "-S")) {
         } else {
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         printf("%s", ir.c_str());
     }
 
-    //print_use_list(program_IR->procedures[0]);
+    // print_use_list(program_IR->procedures[0]);
 
 #ifdef ENABLE_CFG_VIEWER
     printf(">>> Drawing IR CFG... ");
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 #endif
 
     printf(">>> Emitting primitive assembly...\n\n");
-    Program_Asm* program_asm = emit_asm(program_IR, enable_optimization);
+    Program_Asm *program_asm = emit_asm(program_IR, enable_optimization);
 
     String_Builder s_p;
     build_program_asm(&s_p, program_asm, program_ast->globals);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     s.add_terminator();
     printf("%s", s.c_str());
 
-    FILE* assembly_file = fopen(output_file, "w");
+    FILE *assembly_file = fopen(output_file, "w");
     if (assembly_file == NULL) {
         assert(false && "error opening assembly output file");
     }
@@ -104,6 +104,4 @@ int main(int argc, char** argv) {
     fclose(assembly_file);
 
     return 0;
-
 }
-

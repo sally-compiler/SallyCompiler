@@ -1,13 +1,13 @@
 #ifndef AST_H
 #define AST_H
 
-#include "general.h"
 #include "array.h"
+#include "general.h"
 #include <string.h> // strcmp
 
 struct Type_Info;
 
-enum Ast_Node_Type { 
+enum Ast_Node_Type {
     Ast_Type_Statement,
     Ast_Type_If,
     Ast_Type_While,
@@ -60,8 +60,8 @@ struct Ast_Declaration {
     Type_Info *decl_type = NULL;
     int32 arg_index = -1;
     int32 glo_index = -1;
-    bool32 is_const     = false;
-    bool32 is_global    = false;
+    bool32 is_const = false;
+    bool32 is_global = false;
 
     Map<Basic_Block *, Value *> value_map;
 };
@@ -112,7 +112,7 @@ struct Ast_Block {
     Ast_Block *parent = 0;
     bool32 belongs_to_procedure = false;
 
-    Ast_Statement   *first_statement = 0;
+    Ast_Statement *first_statement = 0;
     Array<Ast_Declaration *> declarations;
 };
 
@@ -129,7 +129,7 @@ struct Ast_While {
     Ast_Node_Type type = Ast_Type_While;
     int l, c;
 
-    Ast_Node *condition    = 0;
+    Ast_Node *condition = 0;
     Ast_Block *while_block = 0;
 };
 
@@ -152,22 +152,22 @@ struct Ast_Break {
 };
 
 enum Binary_Op_Type {
-	BINARY_ADD,
-	BINARY_SUBTRACT,
-	BINARY_MULTIPLY,
-	BINARY_SMMUL,
-	BINARY_DIVIDE,
-	BINARY_MOD,
+    BINARY_ADD,
+    BINARY_SUBTRACT,
+    BINARY_MULTIPLY,
+    BINARY_SMMUL,
+    BINARY_DIVIDE,
+    BINARY_MOD,
 
-	/* ASM BINARY INSTRUCTIONS */
-	BINARY_LSL,
-	BINARY_LSR,
-	BINARY_ASL,
-	BINARY_ASR,
-	BINARY_RSB, // reverse sub for machine instruction
-	BINARY_BITWISE_AND, // bitwise or 
-	BINARY_BITWISE_OR, // bitwise or 
-	BINARY_BIC,
+    /* ASM BINARY INSTRUCTIONS */
+    BINARY_LSL,
+    BINARY_LSR,
+    BINARY_ASL,
+    BINARY_ASR,
+    BINARY_RSB,         // reverse sub for machine instruction
+    BINARY_BITWISE_AND, // bitwise or
+    BINARY_BITWISE_OR,  // bitwise or
+    BINARY_BIC,
 
     BINARY_LOGICAL_AND,
     BINARY_LOGICAL_OR,
@@ -181,11 +181,11 @@ enum Binary_Op_Type {
 struct Ast_Binary_Op {
     Ast_Node_Type type = Ast_Type_Binary_Op;
     int l, c;
-    Binary_Op_Type op; 
+    Binary_Op_Type op;
     Ast_Node *lhs, *rhs;
 };
 
-enum Unary_Op_Type { UNARY_POSITIVE, UNARY_NEGATIVE, UNARY_NOT};
+enum Unary_Op_Type { UNARY_POSITIVE, UNARY_NEGATIVE, UNARY_NOT };
 
 struct Ast_Unary_Op {
     Ast_Node_Type type = Ast_Type_Unary_Op;
@@ -193,7 +193,6 @@ struct Ast_Unary_Op {
     Unary_Op_Type op;
     Ast_Node *operand;
 };
-
 
 struct Ast_Procedure {
     Ast_Node_Type type = Ast_Type_Procedure;
@@ -209,8 +208,8 @@ struct Program_AST {
     Array<Ast_Declaration *> globals;
 };
 
-char *print_ast_for_ir(Ast_Node *n, bool with_line_number=true);
-void print_ast(String_Builder *s, Ast_Node *n, bool is_cfg_viewer=false);
+char *print_ast_for_ir(Ast_Node *n, bool with_line_number = true);
+void print_ast(String_Builder *s, Ast_Node *n, bool is_cfg_viewer = false);
 
 enum Init_Tag {
     LONG, // init a single 32 bit value
@@ -219,8 +218,10 @@ enum Init_Tag {
 
 struct Init_Inst {
     Init_Tag tag;
-    uint32 num_of_zeros; // for tag == ZEROS, value is the number zeros to be initialized
-    Ast_Node *init_value = NULL; // for tag == LONG, init_value is the AST node to be init
+    uint32 num_of_zeros; // for tag == ZEROS, value is the number zeros to be
+                         // initialized
+    Ast_Node *init_value =
+        NULL; // for tag == LONG, init_value is the AST node to be init
 
     static Init_Inst make_long(Ast_Node *expr) {
         Init_Inst inst;
@@ -235,17 +236,15 @@ struct Init_Inst {
         inst.num_of_zeros = number_of_zeros;
         return inst;
     }
-
 };
 
 Array<Init_Inst> get_init_sequence(Array<int32> dims, Ast_Init_List *init_list);
 bool is_literal_0(Ast_Node *n);
 
 static Ast_Node *temp_node;
-#define AST_NEW(AST_NODE) ((temp_node = (Ast_Node*)(new AST_NODE)),\
-                            temp_node->l = tokenizer.token()->l,\
-                            temp_node->c = tokenizer.token()->c,\
-                            (AST_NODE *)temp_node)
-
+#define AST_NEW(AST_NODE)                                                      \
+    ((temp_node = (Ast_Node *)(new AST_NODE)),                                 \
+     temp_node->l = tokenizer.token()->l, temp_node->c = tokenizer.token()->c, \
+     (AST_NODE *)temp_node)
 
 #endif

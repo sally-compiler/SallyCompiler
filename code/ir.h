@@ -2,11 +2,11 @@
 #define IR_H
 
 // for IR printing
-#include <string>
 #include <sstream>
+#include <string>
 
-#include "general.h"
 #include "ast.h"
+#include "general.h"
 #include "parser.h"
 
 struct Basic_Block;
@@ -23,10 +23,10 @@ struct Argument;
 struct Memory_Def;
 
 // @Cleanup, oh my
-typedef Array< Pair<Ast_Declaration *, Value *> > Version_Map;
+typedef Array<Pair<Ast_Declaration *, Value *>> Version_Map;
 
 // @cleanup
-typedef Map<Value *, Map<Basic_Block *, Map<Ast_Declaration *, bool> > > Trash;
+typedef Map<Value *, Map<Basic_Block *, Map<Ast_Declaration *, bool>>> Trash;
 
 struct Procedure_IR {
     int values_count = 0;
@@ -39,7 +39,7 @@ struct Procedure_IR {
     Map<Basic_Block *, Version_Map> bb_vermap;
     Trash trash;
 
-    const char* name;
+    const char *name;
     Basic_Block *start_block;
     Basic_Block *exit_block;
 
@@ -49,7 +49,7 @@ struct Procedure_IR {
     Array<Procedure_IR *> callee, caller;
 
     Set<Flow_Edge> edges;
-    Array<Loop*> loops;
+    Array<Loop *> loops;
 };
 
 struct Program_IR {
@@ -57,7 +57,8 @@ struct Program_IR {
     Array<Procedure_IR *> procedures;
 };
 
-void connect_CFG(Basic_Block *from, Basic_Block *to, bool insert_br_to_from = false);
+void connect_CFG(Basic_Block *from, Basic_Block *to,
+                 bool insert_br_to_from = false);
 void push_block(Procedure_IR *f, Basic_Block *bb);
 
 struct Basic_Block {
@@ -68,21 +69,23 @@ struct Basic_Block {
     // to tell which basic block is dead (mark == BB_DEAD)
     int32 mark = 0;
 
-    // mark the condition block 
+    // mark the condition block
     bool is_condition_block = false;
     bool is_loop_header = false;
-    bool32 sealed = true; // most blocks are sealed at start, except for loop headers
+    bool32 sealed =
+        true; // most blocks are sealed at start, except for loop headers
 
     // for block placement
     // try to place together blocks that's in the same loop!
     int belongs_to_loop = -1;
 
-    Array< Pair<Ast_Declaration *, Value *> > incomplete_phis; // @Cleanup, only for IR emitter
+    Array<Pair<Ast_Declaration *, Value *>>
+        incomplete_phis; // @Cleanup, only for IR emitter
     Array<Value *> insts;
     Array<Basic_Block *> preds;
     Array<Basic_Block *> succs;
 
-    /* 
+    /*
      * Dominator infomation
      * which can be computed by running the compute_dominator pass
      */
@@ -95,23 +98,25 @@ struct Basic_Block {
     Loop *loop = NULL;
 
     Basic_Block(Procedure_IR *f = NULL, Basic_Block *parent_bb = NULL) {
-        if (f) push_block(f, this);
-        if (parent_bb) connect_CFG(parent_bb, this, true);
+        if (f)
+            push_block(f, this);
+        if (parent_bb)
+            connect_CFG(parent_bb, this, true);
     }
 
     void remove_dead_values();
 };
 
 enum Branch_Condition {
-    NO_CONDITION          = 0,
+    NO_CONDITION = 0,
 
-    LESS_THAN             = 1,
-    GREATER_THAN          = 2,
-    NOT_EQUAL             = 3,
+    LESS_THAN = 1,
+    GREATER_THAN = 2,
+    NOT_EQUAL = 3,
 
     GREATER_THAN_OR_EQUAL = 4,
-    LESS_THAN_OR_EQUAL    = 5,
-    EQUAL                 = 6
+    LESS_THAN_OR_EQUAL = 5,
+    EQUAL = 6
 };
 
 struct Use {
@@ -150,15 +155,15 @@ Array<Use *> get_operands(Value *v);
 struct Value {
     Value_Type type;
     Use *use = NULL; // linked list
-    Basic_Block *b; // belongs to block
-    int n = -1; // nubmering
+    Basic_Block *b;  // belongs to block
+    int n = -1;      // nubmering
     char *comment = NULL;
 
-    bool invariant = false; //for loop invariant
+    bool invariant = false; // for loop invariant
 
     /* For optimizations like GVN and GCM */
     bool visited = false;
-    bool live    = true;
+    bool live = true;
 
     Value(Value_Type type) : type(type) {}
 
@@ -190,11 +195,12 @@ struct Value {
     }
 
     void drop_uses_of_operands() {
-        for(auto u : get_operands(this)) u->remove();
+        for (auto u : get_operands(this))
+            u->remove();
     }
 
     void replace_all_uses_with(Value *new_value) {
-        for(auto u = use; u;) {
+        for (auto u = use; u;) {
             u->v = new_value;
             auto nxt = u->next;
             new_value->add_new_use(u);
@@ -204,13 +210,13 @@ struct Value {
     }
 
     void clean_dead_uses() {
-        for(auto u = use; u;) {
+        for (auto u = use; u;) {
             if (u->dead) {
                 auto new_u = u->next;
                 u->remove();
                 u = new_u;
             } else {
-                u=u->next;
+                u = u->next;
             }
         }
     }
@@ -221,23 +227,24 @@ struct Value {
     }
 
     void add_new_use(Use *u) {
-        u->prev = NULL; // u might come from other use list, need to clean previous value
-        if (use) use->prev = u;
+        u->prev = NULL; // u might come from other use list, need to clean
+                        // previous value
+        if (use)
+            use->prev = u;
         u->next = use;
         use = u;
     }
 
     ~Value() {
-        for(auto u : get_operands(this)) {
+        for (auto u : get_operands(this)) {
             u->remove();
         }
-        for(auto u = use; u; u=u->next) {
+        for (auto u = use; u; u = u->next) {
             u->remove();
         }
     }
 
-    template<typename VT>
-    VT *as() {
+    template <typename VT> VT *as() {
         return (type == VT::TYPE) ? static_cast<VT *>(this) : NULL;
     }
 };
@@ -260,7 +267,7 @@ struct Memory_Def : Value {
 
     bool is_initial_version = false;
     Use *clobbers = NULL; // clobbers which memory version?
-    Use *cause = NULL; // who is causing the def?
+    Use *cause = NULL;    // who is causing the def?
     Ast_Declaration *decl = NULL;
 
     Memory_Def() : Value(MEMORY_DEF) {}
@@ -272,7 +279,6 @@ struct Global : Value {
     Ast_Declaration *decl;
     Global() : Value(GLOBAL) {}
 };
-
 
 struct Phi : Value {
     static const Value_Type TYPE = PHI;
@@ -288,10 +294,10 @@ struct Phi : Value {
 // @note: memory phis can be used as if they are normal phis
 struct Memory_Phi : Value {
     static const Value_Type TYPE = MEMORY_PHI;
-    Array<Use *> operands; // can only be Memory_Def
+    Array<Use *> operands;        // can only be Memory_Def
     Array<Basic_Block *> sources; // where operands come from
 
-    //Ast_Declaration *decl; @note: what is this?
+    // Ast_Declaration *decl; @note: what is this?
 
     Memory_Phi(Basic_Block *belongs_to) : Value(MEMORY_PHI) { b = belongs_to; }
 };
@@ -307,7 +313,7 @@ struct Instruction_Binary : Value {
 struct Instruction_Unary : Value {
     static const Value_Type TYPE = INST_UNARY;
     Unary_Op_Type op_type; // defined in ast.h
-    Use* oprend;
+    Use *oprend;
 
     Instruction_Unary() : Value(INST_UNARY) {}
 };
@@ -341,7 +347,8 @@ struct Memory_Read : Value {
     Ast_Declaration *decl = NULL;
     Use *base = NULL; // @Unsigned?
     Use *offset = NULL;
-    Use *mem_ver = NULL; // which memory version is reading from? can only be memory def
+    Use *mem_ver =
+        NULL; // which memory version is reading from? can only be memory def
 
     /* @note
      * bake_constant pass need to know if a Memory_Read

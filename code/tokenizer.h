@@ -1,8 +1,8 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-#include "general.h"
 #include "array.h"
+#include "general.h"
 
 #include <cinttypes>
 #include <ctype.h>
@@ -46,7 +46,7 @@ struct Token {
     bool32 is_op;
     bool32 is_keyword;
     union {
-        int64  int_val; // INT_MIN....  -2147483648
+        int64 int_val; // INT_MIN....  -2147483648
         char *identifier;
     } data;
 };
@@ -55,10 +55,10 @@ const char *token_type_to_desc(Token_Type token_type);
 const char *token_to_desc(Token *token);
 
 struct Tokenizer {
-    char* expr;
+    char *expr;
     size_t cur;
     Array<Token> tokens_buffer;
-    const char* src_filename;
+    const char *src_filename;
     int token_index;
 
     int l = 1, c = 0;

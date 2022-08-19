@@ -1,14 +1,15 @@
 
 
 void move_value(Value *v, Basic_Block *bb, bool to_first = false) {
-    if (v->b == bb) return;
+    if (v->b == bb)
+        return;
     // @FIXME: crap performance
     v->b->insts.remove(v);
     v->b = bb;
     if (to_first) {
         bb->insts.insert(0, v);
     } else {
-        bb->insts.insert(bb->insts.len-1, v);
+        bb->insts.insert(bb->insts.len - 1, v);
     }
 }
 
@@ -21,39 +22,53 @@ void move_value(Value *v, Basic_Block *bb, bool to_first = false) {
 Phi *get_induction_variable(Loop *l) {
 
     // checking if has loop has break, or mutiple conditions
-    //if (l->header->preds.len != 0) return NULL; // make sure no continues
+    // if (l->header->preds.len != 0) return NULL; // make sure no continues
 
-    for(auto bb : l->body)  {
-        if (bb == l->header) continue;
-        for(auto succ : bb->succs) {
+    for (auto bb : l->body) {
+        if (bb == l->header)
+            continue;
+        for (auto succ : bb->succs) {
             if (l->body.find(succ) == -1) {
                 return NULL;
             }
         }
     }
 
-    auto br = l->header->insts[l->header->insts.len-1]->as<Instruction_Branch>();
+    auto br =
+        l->header->insts[l->header->insts.len - 1]->as<Instruction_Branch>();
     assert(br);
     auto cond = br->cond->v->as<Instruction_Binary>();
-    if (!cond) return NULL;
-    if (cond->op_type != BINARY_LESS_THAN) return NULL;
-    if (l->body.find(cond->rhs->v->b) != -1) return NULL;
+    if (!cond)
+        return NULL;
+    if (cond->op_type != BINARY_LESS_THAN)
+        return NULL;
+    if (l->body.find(cond->rhs->v->b) != -1)
+        return NULL;
 
-    if (cond->lhs->v->type != PHI) return NULL;
+    if (cond->lhs->v->type != PHI)
+        return NULL;
     Phi *ind = (Phi *)cond->lhs->v;
 
-    if (ind->operands.len != 2) return NULL;
+    if (ind->operands.len != 2)
+        return NULL;
     auto o1 = ind->operands[0]->v->as<Constant>();
-    if (!o1) return NULL;
-    if (o1->value != 0) return NULL;
+    if (!o1)
+        return NULL;
+    if (o1->value != 0)
+        return NULL;
 
     auto o2 = ind->operands[1]->v->as<Instruction_Binary>();
-    if (!o2) return NULL;
-    if (o2->op_type != BINARY_ADD) return NULL;
-    if (o2->lhs->v != ind) return NULL;
+    if (!o2)
+        return NULL;
+    if (o2->op_type != BINARY_ADD)
+        return NULL;
+    if (o2->lhs->v != ind)
+        return NULL;
     auto stride = o2->rhs->v->as<Constant>();
-    if (!stride) return NULL;
-    if (stride->value != 1) return NULL;
+    if (!stride)
+        return NULL;
+    if (stride->value != 1)
+        return NULL;
 
     return ind;
 }
@@ -65,22 +80,27 @@ void mem2reg_for_acc_on_function(Procedure_IR *f) {
             printf("found induction variable: v%d\n", ind->n);
             auto inc = ind->operands[1]->v;
 
-            for(auto inner : f->loops) {
-                if (inner == l) continue;
-                if (!inner->is_innermost) continue;
+            for (auto inner : f->loops) {
+                if (inner == l)
+                    continue;
+                if (!inner->is_innermost)
+                    continue;
 
-                Loop* p = inner->parent;
+                Loop *p = inner->parent;
                 while (p && p != l) {
                     p = p->parent;
                 }
-                if (!p) continue;
+                if (!p)
+                    continue;
 
                 bool missed = false;
-                Memory_Read  *load  = NULL;
+                Memory_Read *load = NULL;
                 Memory_Write *store = NULL;
-                for(auto u=ind->use; u; u=u->next) {
-                    if (inner->body.find(u->user->b) == -1) continue;
-                    if (u->user == inc) continue;
+                for (auto u = ind->use; u; u = u->next) {
+                    if (inner->body.find(u->user->b) == -1)
+                        continue;
+                    if (u->user == inc)
+                        continue;
                     if (auto l = u->user->as<Memory_Read>()) {
                         if (load) {
                             missed = true;
@@ -99,9 +119,12 @@ void mem2reg_for_acc_on_function(Procedure_IR *f) {
                     }
                 }
 
-                if (!load) continue;
-                if (!store) continue;
-                if (missed) continue;
+                if (!load)
+                    continue;
+                if (!store)
+                    continue;
+                if (missed)
+                    continue;
                 /*
                 if (load->b->loop == l)  continue;
                 if (store->b->loop == l) continue;
@@ -109,25 +132,28 @@ void mem2reg_for_acc_on_function(Procedure_IR *f) {
                 */
 
                 auto acc = store->value_to_write->v->as<Instruction_Binary>();
-                if (!acc) continue;
-                if (acc->op_type != BINARY_ADD) continue;
-                if (acc->lhs->v != load) continue;
+                if (!acc)
+                    continue;
+                if (acc->op_type != BINARY_ADD)
+                    continue;
+                if (acc->lhs->v != load)
+                    continue;
 
                 // mem2reg
                 changed = true;
                 assert(inner->header->preds.len == 2);
                 auto preheader = inner->header->preds[0]; // @FIXME
-                auto latch = inner->header->succs[1]; // @FIXME
+                auto latch = inner->header->succs[1];     // @FIXME
                 assert(inner->body.find(latch) == -1);
 
                 auto initial_read = load;
-                auto write_after  = store;
+                auto write_after = store;
 
                 move_value(initial_read, preheader, true);
                 move_value(write_after, latch, true);
 
                 auto tmp = new Phi(inner->header);
-                for(auto pred : inner->header->preds) {
+                for (auto pred : inner->header->preds) {
                     tmp->sources.push(pred);
                 }
                 tmp->operands.set_len(2);
@@ -141,7 +167,6 @@ void mem2reg_for_acc_on_function(Procedure_IR *f) {
                 write_after->value_to_write->remove();
                 write_after->value_to_write = new_use(tmp, write_after);
             }
-
         }
     }
 

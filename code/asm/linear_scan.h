@@ -5,9 +5,7 @@
 
 int32 n = 0;
 
-bool need_alloc(MOperand m) {
-    return (m.tag == REG) || (m.tag == VREG);
-}
+bool need_alloc(MOperand m) { return (m.tag == REG) || (m.tag == VREG); }
 
 void number_inst(Func_Asm *f) {
 
@@ -15,25 +13,29 @@ void number_inst(Func_Asm *f) {
 
     Array<Machine_Block *> stack;
 
-    for(auto bb : f->mbs) bb->visited = false;
+    for (auto bb : f->mbs)
+        bb->visited = false;
 
     stack.push(f->mbs[0]);
 
-    while(!stack.empty()) {
-        auto bb = stack.back(); stack.pop();
+    while (!stack.empty()) {
+        auto bb = stack.back();
+        stack.pop();
 
-        if (bb->visited) continue;
+        if (bb->visited)
+            continue;
         bb->visited = true;
 
         // number the instructions within
-        for(auto I=bb->inst; I; I=I->next) {
+        for (auto I = bb->inst; I; I = I->next) {
             I->n = n++;
         }
 
-        if (bb->control_transfer_inst->tag == MI_RETURN) continue;
+        if (bb->control_transfer_inst->tag == MI_RETURN)
+            continue;
 
         assert(bb->control_transfer_inst->tag == MI_BRANCH);
-        auto br = (MI_Branch *) bb->control_transfer_inst;
+        auto br = (MI_Branch *)bb->control_transfer_inst;
 
         if (br->cond == NO_CONDITION) {
             stack.push(br->true_target);
@@ -49,15 +51,13 @@ void number_inst(Func_Asm *f) {
             }
         }
     }
-
 }
 
-static Array< Set<MOperand> > live_in;
-static Array< Set<MOperand> > live_out;
+static Array<Set<MOperand>> live_in;
+static Array<Set<MOperand>> live_out;
 
-static Array< Set<MOperand> > use_set; // actually 'use without def' set
-static Array< Set<MOperand> > def_set;
-
+static Array<Set<MOperand>> use_set; // actually 'use without def' set
+static Array<Set<MOperand>> def_set;
 
 void analyse_liveness(Func_Asm *func_asm) {
 
@@ -72,41 +72,42 @@ void analyse_liveness(Func_Asm *func_asm) {
     def_set.set_len(func_asm->mbs.len);
 
     // get use and def sets for each machine block
-    for(int i = 0; i < func_asm->mbs.len; i++) {
-        for(auto I = func_asm->mbs[i]->inst; I; I=I->next) {
+    for (int i = 0; i < func_asm->mbs.len; i++) {
+        for (auto I = func_asm->mbs[i]->inst; I; I = I->next) {
             Array<MOperand> defs = get_defs(I);
             Array<MOperand> uses = get_uses(I, func_asm->has_return_value);
 
-            for(auto use : uses) {
-                if (use.tag == VREG && def_set[i].find(use) == def_set[i].end()) {
+            for (auto use : uses) {
+                if (use.tag == VREG &&
+                    def_set[i].find(use) == def_set[i].end()) {
                     use_set[i].insert(use);
                 }
             }
 
-            for(auto def : defs) {
+            for (auto def : defs) {
                 def_set[i].insert(def);
             }
         }
     }
 
     bool changed = true;
-    while(changed) {
+    while (changed) {
         changed = false;
-        for(int i = 0; i < func_asm->mbs.len; i++) {
+        for (int i = 0; i < func_asm->mbs.len; i++) {
             Set<MOperand> old_in = live_in[i];
             Set<MOperand> old_out = live_out[i];
 
             // live_in[i] = use_set[i] union (live_out[i]-def_set[i])
             live_in[i] = use_set[i];
-            for(auto o : live_out[i]) {
+            for (auto o : live_out[i]) {
                 if (def_set[i].find(o) == def_set[i].end()) {
                     live_in[i].insert(o);
                 }
             }
 
             live_out[i].clear();
-            for(auto succ : func_asm->mbs[i]->succs) {
-                for(auto succ_in : live_in[succ->i]) {
+            for (auto succ : func_asm->mbs[i]->succs) {
+                for (auto succ_in : live_in[succ->i]) {
                     live_out[i].insert(succ_in);
                 }
             }
@@ -116,12 +117,9 @@ void analyse_liveness(Func_Asm *func_asm) {
                     changed = true;
                 }
             }
-
         }
     }
-
 }
-
 
 Map<MOperand, int32> live_start;
 Map<MOperand, int32> live_end;
@@ -133,32 +131,34 @@ void compute_live_intervals(Func_Asm *func_asm) {
     live_start.clear();
     live_end.clear();
 
-    for(auto b : func_asm->mbs) {
-        for(auto I=b->inst; I; I=I->next) {
+    for (auto b : func_asm->mbs) {
+        for (auto I = b->inst; I; I = I->next) {
             auto defs = get_defs(I);
             auto uses = get_uses(I, func_asm->has_return_value);
 
-            for(auto d : defs) {
-                if (!need_alloc(d)) continue;
+            for (auto d : defs) {
+                if (!need_alloc(d))
+                    continue;
                 live_start[d] = 0x7fffffff;
-                live_end[d]   = 0;
+                live_end[d] = 0;
             }
 
-            for(auto u : uses) {
-                if (!need_alloc(u)) continue;
+            for (auto u : uses) {
+                if (!need_alloc(u))
+                    continue;
                 live_start[u] = 0x7fffffff;
-                live_end[u]   = 0;
+                live_end[u] = 0;
             }
         }
     }
 
-    for(auto b : func_asm->mbs) {
+    for (auto b : func_asm->mbs) {
         auto live = live_out[b->i];
-        for(auto I = func_asm->mbs[b->i]->last_inst; I; I=I->prev) {
+        for (auto I = func_asm->mbs[b->i]->last_inst; I; I = I->prev) {
             auto defs = get_defs(I);
             auto uses = get_uses(I, func_asm->has_return_value);
 
-            for(auto def : defs) {
+            for (auto def : defs) {
                 if (need_alloc(def)) {
                     live_start[def] = MIN(live_start[def], I->n);
                     live.insert(def);
@@ -166,23 +166,23 @@ void compute_live_intervals(Func_Asm *func_asm) {
             }
 
             Set<MOperand> new_live;
-            for(auto u : uses) {
+            for (auto u : uses) {
                 if (need_alloc(u)) {
                     new_live.insert(u);
                 }
             }
-            for(auto l : live) {
+            for (auto l : live) {
                 if (defs.find(l) == -1) {
                     new_live.insert(l);
                 }
             }
             live = new_live;
 
-            for(auto l : live) {
-                if (!need_alloc(l)) continue;
+            for (auto l : live) {
+                if (!need_alloc(l))
+                    continue;
                 live_end[l] = MAX(live_end[l], I->n);
             }
-
         }
     }
 }
@@ -191,7 +191,6 @@ struct Interval {
     MOperand m;
     int32 start;
     int32 end;
-
 };
 
 bool operator==(const Interval &x, const Interval &y) {
@@ -211,7 +210,7 @@ bool cmp_intv(const Interval &a, const Interval &b) {
 }
 
 void expire_old_intervals(int i) {
-    for(int j = 0; j < active.len; j++) {
+    for (int j = 0; j < active.len; j++) {
         auto intj = active[j];
         if (intj.end > live_intvs[i].start) {
             return;
@@ -233,10 +232,12 @@ void spill_at_interval(int i) {
         reg[intv.m] = r;
         location[spill.m] = stack_size;
         spilled_vregs.insert(spill.m);
-        printf("spilling "); print_operand(spill.m); printf("\n");
+        printf("spilling ");
+        print_operand(spill.m);
+        printf("\n");
 
         int j = 0;
-        for(; j < active.len; j++) {
+        for (; j < active.len; j++) {
             if (active[j].end >= intv.end) {
                 break;
             }
@@ -246,19 +247,19 @@ void spill_at_interval(int i) {
     } else {
         location[intv.m] = stack_size;
         spilled_vregs.insert(intv.m);
-        printf("spilling "); print_operand(intv.m); printf("\n");
+        printf("spilling ");
+        print_operand(intv.m);
+        printf("\n");
     }
     stack_size += 4;
 }
 
 void setup_stack(Func_Asm *f) {
-    uint32 callee_size      = 0,
-           local_array_size = f->stack_size,
-           spilled_size     = stack_size,
-           arg_size         = 0;
+    uint32 callee_size = 0, local_array_size = f->stack_size,
+           spilled_size = stack_size, arg_size = 0;
 
     // save all callee save registers
-    for(uint8 r = r0; r < REG_COUNT; r++) {
+    for (uint8 r = r0; r < REG_COUNT; r++) {
         if (is_callee_save(r) || r == lr) {
             callee_size += 4;
         }
@@ -266,8 +267,8 @@ void setup_stack(Func_Asm *f) {
 
     // calculate arg size
     int max_arg_count = 0;
-    for(auto mb : f->mbs) {
-        for(auto I=mb->inst; I; I=I->next) {
+    for (auto mb : f->mbs) {
+        for (auto I = mb->inst; I; I = I->next) {
             if (I->tag == MI_FUNC_CALL) {
                 auto call = (MI_Func_Call *)I;
                 if (call->arg_count > max_arg_count) {
@@ -278,22 +279,24 @@ void setup_stack(Func_Asm *f) {
     }
 
     if (max_arg_count > 4) {
-        arg_size = (max_arg_count - 4)*4;
+        arg_size = (max_arg_count - 4) * 4;
     }
 
     // insert stores after defs, loads before uses
-    for(auto mb : f->mbs) {
-        for(auto I=mb->inst; I; I=I->next) {
+    for (auto mb : f->mbs) {
+        for (auto I = mb->inst; I; I = I->next) {
             auto defs = get_defs(I);
             for (auto def : defs) {
-                if (def.tag != VREG) continue;
-                if (spilled_vregs.find(def) == spilled_vregs.end()) continue;
-                
+                if (def.tag != VREG)
+                    continue;
+                if (spilled_vregs.find(def) == spilled_vregs.end())
+                    continue;
+
                 auto str = new MI_Store;
                 str->mem_tag = MEM_SAVE_SPILL;
-                str->reg     = def;
-                str->base    = make_reg(sp);
-                str->offset  = make_imm(arg_size + location[def]);
+                str->reg = def;
+                str->base = make_reg(sp);
+                str->offset = make_imm(arg_size + location[def]);
 
                 insert(str, I->next);
                 replace_defs(I, def, str->reg);
@@ -303,15 +306,17 @@ void setup_stack(Func_Asm *f) {
             uint8 r = r9; // using r9~r10 as temp
 
             for (auto use : uses) {
-                if (use.tag != VREG) continue;
-                if (spilled_vregs.find(use) == spilled_vregs.end()) continue;
+                if (use.tag != VREG)
+                    continue;
+                if (spilled_vregs.find(use) == spilled_vregs.end())
+                    continue;
 
                 assert(r == r9 || r == r10);
                 auto ldr = new MI_Load;
                 ldr->mem_tag = MEM_LOAD_SPILL;
-                ldr->reg     = make_reg(r++);
-                ldr->base    = make_reg(sp);
-                ldr->offset  = make_imm(arg_size + location[use]);
+                ldr->reg = make_reg(r++);
+                ldr->base = make_reg(sp);
+                ldr->offset = make_imm(arg_size + location[use]);
 
                 insert(ldr, I);
                 replace_uses(I, use, ldr->reg);
@@ -322,26 +327,27 @@ void setup_stack(Func_Asm *f) {
     // insert prologue and epilogue
     // insert add/sub sp & push/pops
     auto push = new MI_Push;
-    for(uint8 r = r0; r < REG_COUNT; r++) {
+    for (uint8 r = r0; r < REG_COUNT; r++) {
         if (is_callee_save(r) || r == lr) {
             push->operands.push(make_reg(r));
         }
     }
 
     auto total_size = local_array_size + spilled_size + arg_size;
-    auto sub_sp = new MI_Binary(BINARY_SUBTRACT, make_reg(sp), make_reg(sp), make_imm(total_size));
-    auto add_sp = new MI_Binary(BINARY_ADD, make_reg(sp), make_reg(sp), make_imm(total_size));
+    auto sub_sp = new MI_Binary(BINARY_SUBTRACT, make_reg(sp), make_reg(sp),
+                                make_imm(total_size));
+    auto add_sp = new MI_Binary(BINARY_ADD, make_reg(sp), make_reg(sp),
+                                make_imm(total_size));
 
     if (total_size > 0) {
         insert(sub_sp, f->mbs[0]->inst);
     }
     insert(push, f->mbs[0]->inst);
 
-
-    for(auto bb : f->mbs) {
+    for (auto bb : f->mbs) {
         if (bb->last_inst && bb->last_inst->tag == MI_RETURN) {
             auto pop = new MI_Pop;
-            for(uint8 r = r0; r < REG_COUNT; r++) {
+            for (uint8 r = r0; r < REG_COUNT; r++) {
                 if (is_callee_save(r) || r == lr) {
                     pop->operands.push(make_reg(r));
                 }
@@ -353,59 +359,61 @@ void setup_stack(Func_Asm *f) {
         }
     }
 
-
     // fixup local array base calc
-    for(auto base : f->local_array_bases) {
+    for (auto base : f->local_array_bases) {
         assert(base->tag == MI_BINARY);
-        auto sub = (MI_Binary *) base;
+        auto sub = (MI_Binary *)base;
         assert(sub->op == BINARY_SUBTRACT);
         assert(sub->lhs == make_reg(sp));
         assert(sub->rhs.tag == IMM && sub->rhs.value > 0);
 
-        int32 offset_relative_to_sp = arg_size + spilled_size + local_array_size - sub->rhs.value;
+        int32 offset_relative_to_sp =
+            arg_size + spilled_size + local_array_size - sub->rhs.value;
         // @TODO replace with a mov directly
         // if offset relative to sp is 0
 
         sub->op = BINARY_ADD;
         sub->lhs = make_reg(sp);
         sub->rhs = make_imm(offset_relative_to_sp);
-
     }
 
-
     // fixup arg loading calc
-    for(auto mb : f->mbs) {
-        for(auto I=mb->inst; I; I=I->next) {
-            if (I->tag != MI_LOAD) continue;
-            auto ldr = (MI_Load *) I;
-            if (!ldr) continue;
-            if (ldr->mem_tag != MEM_LOAD_ARG) continue;
+    for (auto mb : f->mbs) {
+        for (auto I = mb->inst; I; I = I->next) {
+            if (I->tag != MI_LOAD)
+                continue;
+            auto ldr = (MI_Load *)I;
+            if (!ldr)
+                continue;
+            if (ldr->mem_tag != MEM_LOAD_ARG)
+                continue;
 
-            int32 offset_value = ((ldr->offset.tag == SHAYEBUSHI) ? 0 : ldr->offset.value);
-            uint32 ofst_rel_to_sp = arg_size + spilled_size + local_array_size + callee_size + offset_value;
+            int32 offset_value =
+                ((ldr->offset.tag == SHAYEBUSHI) ? 0 : ldr->offset.value);
+            uint32 ofst_rel_to_sp = arg_size + spilled_size + local_array_size +
+                                    callee_size + offset_value;
             ldr->base.value = sp;
             ldr->offset = make_imm(ofst_rel_to_sp);
-
         }
     }
 
     // legalize imm, use r12 as temp
-    for(auto mb : f->mbs) {
-        for(auto I=mb->inst; I; I=I->next) {
+    for (auto mb : f->mbs) {
+        for (auto I = mb->inst; I; I = I->next) {
             auto uses = get_uses(I, f->has_return_value);
 
             bool inst_need_legalize = false;
             MOperand use_of_imm;
 
             if (I->tag == MI_LOAD) {
-                auto load = (MI_Load *) I;
+                auto load = (MI_Load *)I;
                 if (load->base.tag == IMM) {
                     goto done;
                 }
             }
 
             if (I->tag == MI_LOAD || I->tag == MI_STORE) {
-                auto load_or_store = (MI_Load *) I;
+                auto load_or_store = (MI_Load *)I;
                 if (load_or_store->offset.tag == IMM) {
                     use_of_imm = load_or_store->offset;
                     inst_need_legalize = !can_be_imm12(use_of_imm.value);
@@ -413,7 +421,7 @@ void setup_stack(Func_Asm *f) {
                 }
             }
 
-            for(auto use : uses) {
+            for (auto use : uses) {
                 if (use.tag == IMM) {
                     use_of_imm = use;
                     inst_need_legalize = !can_be_imm_ror(use_of_imm.value);
@@ -421,7 +429,7 @@ void setup_stack(Func_Asm *f) {
                 }
             }
 
-            done:;
+        done:;
 
             if (inst_need_legalize) {
                 printf("%d cannot be imm!\n", use_of_imm.value);
@@ -431,10 +439,8 @@ void setup_stack(Func_Asm *f) {
                 insert(ldr, I);
                 replace_uses(I, use_of_imm, temp);
             }
-
         }
     }
-
 }
 
 const int R = 9;
@@ -448,18 +454,18 @@ void allocate(Func_Asm *f) {
     spilled_vregs.clear();
     reg_pool.clear();
 
-    for(uint8 r = 0; r <= r8; r++) {
+    for (uint8 r = 0; r <= r8; r++) {
         reg_pool.insert(r);
     }
 
-    for(uint8 r = 0; r < REG_COUNT; r++) {
+    for (uint8 r = 0; r < REG_COUNT; r++) {
         reg[make_reg(r)] = r;
     }
 
-    for(int i = 0; i < live_intvs.len; i++) {
+    for (int i = 0; i < live_intvs.len; i++) {
         auto intv = live_intvs[i];
         expire_old_intervals(i);
-        
+
         if (active.len == R || reg_pool.empty()) {
             spill_at_interval(i);
         } else {
@@ -482,7 +488,7 @@ void allocate(Func_Asm *f) {
             }
 
             int j = 0;
-            for(; j < active.len; j++) {
+            for (; j < active.len; j++) {
                 if (active[j].end >= intv.end) {
                     break;
                 }
@@ -494,7 +500,7 @@ void allocate(Func_Asm *f) {
 }
 
 void color_register(MOperand &m) {
-    if(need_alloc(m)) {
+    if (need_alloc(m)) {
         uint8 r = reg[m];
         assert(r < REG_COUNT);
         m.value = r;
@@ -512,50 +518,51 @@ void color_register(MOperand &m) {
 
 void assign_reg(Func_Asm *f) {
 
-    for(auto b : f->mbs) {
-        for(auto I = b->inst; I; I=I->next) {
-            switch(I->tag) {
+    for (auto b : f->mbs) {
+        for (auto I = b->inst; I; I = I->next) {
+            switch (I->tag) {
 
-                case MI_CLZ: {
-                    color_register(((MI_Clz*) I)->dst); 
-                    color_register(((MI_Clz*) I)->operand); 
-                } break;
+            case MI_CLZ: {
+                color_register(((MI_Clz *)I)->dst);
+                color_register(((MI_Clz *)I)->operand);
+            } break;
 
-                case MI_MOVE: {
-                    color_register(((MI_Move*) I)->dst); 
-                    color_register(((MI_Move*) I)->src); 
-                } break;
+            case MI_MOVE: {
+                color_register(((MI_Move *)I)->dst);
+                color_register(((MI_Move *)I)->src);
+            } break;
 
-                case MI_BINARY: {
-                    color_register(((MI_Binary*) I)->dst); 
-                    color_register(((MI_Binary*) I)->lhs); 
-                    color_register(((MI_Binary*) I)->rhs); 
-                } break;
+            case MI_BINARY: {
+                color_register(((MI_Binary *)I)->dst);
+                color_register(((MI_Binary *)I)->lhs);
+                color_register(((MI_Binary *)I)->rhs);
+            } break;
 
-                case MI_COMPARE: {
-                    color_register(((MI_Compare *) I)->lhs); 
-                    color_register(((MI_Compare *) I)->rhs); 
-                } break;
+            case MI_COMPARE: {
+                color_register(((MI_Compare *)I)->lhs);
+                color_register(((MI_Compare *)I)->rhs);
+            } break;
 
-                case MI_LOAD:
-                case MI_STORE: {
-                    color_register(((MI_Load *) I)->reg); 
-                    color_register(((MI_Load *) I)->base); 
-                    color_register(((MI_Load *) I)->offset); 
-                } break;
+            case MI_LOAD:
+            case MI_STORE: {
+                color_register(((MI_Load *)I)->reg);
+                color_register(((MI_Load *)I)->base);
+                color_register(((MI_Load *)I)->offset);
+            } break;
 
-                case MI_RETURN:
-                case MI_FUNC_CALL:
-                case MI_PUSH: // we don't push/pop virtual regs, for now
-                case MI_POP:
-                case MI_BRANCH:
-                    break;
+            case MI_RETURN:
+            case MI_FUNC_CALL:
+            case MI_PUSH: // we don't push/pop virtual regs, for now
+            case MI_POP:
+            case MI_BRANCH:
+                break;
 
-                default: exit(65); assert(false);
+            default:
+                exit(65);
+                assert(false);
             }
         }
     }
-
 }
 
 void linear_scan_function(Func_Asm *f) {
@@ -564,7 +571,7 @@ void linear_scan_function(Func_Asm *f) {
     analyse_liveness(f);
     compute_live_intervals(f);
 
-    for(auto it = live_start.begin(); it != live_start.end(); it++) {
+    for (auto it = live_start.begin(); it != live_start.end(); it++) {
 
         // handle lr
         if (it->second == 0x7fffffff) {
@@ -572,13 +579,18 @@ void linear_scan_function(Func_Asm *f) {
             it->second = 0;
         }
 
-        // insert interval into live_intvs, sorted by live_start from low to high
+        // insert interval into live_intvs, sorted by live_start from low to
+        // high
         Interval intv{it->first, it->second, live_end[it->first]};
         live_intvs.push(intv);
 
-        switch(it->first.tag) {
-            case REG:  printf("r%d", it->first.value); break;
-            case VREG: printf("vr%d", it->first.value); break;
+        switch (it->first.tag) {
+        case REG:
+            printf("r%d", it->first.value);
+            break;
+        case VREG:
+            printf("vr%d", it->first.value);
+            break;
         }
         printf(" [%d, %d]\n", it->second, live_end[it->first]);
     }
@@ -586,7 +598,7 @@ void linear_scan_function(Func_Asm *f) {
     std::sort(live_intvs.begin(), live_intvs.end(), cmp_intv);
 
     allocate(f);
-    for(auto it = reg.begin(); it != reg.end(); it++) {
+    for (auto it = reg.begin(); it != reg.end(); it++) {
         print_operand(it->first);
         printf(" <- ");
         print_operand(make_reg(it->second));

@@ -29,157 +29,158 @@ Basic_Block *dfs_copy(Basic_Block *standar, Array<Basic_Block *> *new_ir,
         t = val;
         switch (val->type) {
 
-            case CONSTANT: {
-                vv = (Value *)new Constant(((Constant *)val)->value);
+        case CONSTANT: {
+            vv = (Value *)new Constant(((Constant *)val)->value);
 
-            } break;
+        } break;
 
-            case ARGUMENT: {
-                auto s = ((Argument *)val);
-                vv = (Value *)new Argument;
-                ((Argument *)vv)->arg_index = s->arg_index;
-                ((Argument *)vv)->decl = s->decl;
-            } break;
+        case ARGUMENT: {
+            auto s = ((Argument *)val);
+            vv = (Value *)new Argument;
+            ((Argument *)vv)->arg_index = s->arg_index;
+            ((Argument *)vv)->decl = s->decl;
+        } break;
 
-            case GLOBAL: {
-                auto s = (Global *)val;
-                auto g = new Global;
-                vv = g;
-                g->name = s->name;
-                g->decl = s->decl;
-            } break;
+        case GLOBAL: {
+            auto s = (Global *)val;
+            auto g = new Global;
+            vv = g;
+            g->name = s->name;
+            g->decl = s->decl;
+        } break;
 
-            case MEMORY_DEF: {
-                auto s = (Memory_Def *)val;
-                auto d = new Memory_Def;
-                vv = d;
+        case MEMORY_DEF: {
+            auto s = (Memory_Def *)val;
+            auto d = new Memory_Def;
+            vv = d;
 
-                d->is_initial_version = s->is_initial_version;
+            d->is_initial_version = s->is_initial_version;
 
-                if (d->clobbers) {
-                    d->clobbers = new_use(mapping[s->clobbers->v], vv);
-                }
+            if (d->clobbers) {
+                d->clobbers = new_use(mapping[s->clobbers->v], vv);
+            }
 
-                if (d->cause) {
-                    d->cause = new_use(mapping[s->cause->v], vv);
-                }
+            if (d->cause) {
+                d->cause = new_use(mapping[s->cause->v], vv);
+            }
 
-            } break;
+        } break;
 
-            case PHI: {
-                vv = (Value *)new Phi(block);
-            } break;
+        case PHI: {
+            vv = (Value *)new Phi(block);
+        } break;
 
-            case MEMORY_PHI: {
-                vv = (Value *)new Memory_Phi(block);
-            } break;
+        case MEMORY_PHI: {
+            vv = (Value *)new Memory_Phi(block);
+        } break;
 
-            case INST_BINARY: {
-                vv = (Value *)new Instruction_Binary;
-                ((Instruction_Binary *)vv)->lhs =
-                    new_use(mapping[((Instruction_Binary *)val)->lhs->v], vv);
-                ((Instruction_Binary *)vv)->rhs =
-                    new_use(mapping[((Instruction_Binary *)val)->rhs->v], vv);
-                ((Instruction_Binary *)vv)->op_type =
-                    ((Instruction_Binary *)val)->op_type;
-            } break;
+        case INST_BINARY: {
+            vv = (Value *)new Instruction_Binary;
+            ((Instruction_Binary *)vv)->lhs =
+                new_use(mapping[((Instruction_Binary *)val)->lhs->v], vv);
+            ((Instruction_Binary *)vv)->rhs =
+                new_use(mapping[((Instruction_Binary *)val)->rhs->v], vv);
+            ((Instruction_Binary *)vv)->op_type =
+                ((Instruction_Binary *)val)->op_type;
+        } break;
 
-            case INST_UNARY: {
-                vv = (Value *)new Instruction_Unary;
-                auto s = ((Instruction_Unary *)val);
-                ((Instruction_Unary *)vv)->op_type =
-                    ((Instruction_Unary *)val)->op_type;
-                ((Instruction_Unary *)vv)->oprend =
-                    new_use(mapping[s->oprend->v], vv);
-            } break;
+        case INST_UNARY: {
+            vv = (Value *)new Instruction_Unary;
+            auto s = ((Instruction_Unary *)val);
+            ((Instruction_Unary *)vv)->op_type =
+                ((Instruction_Unary *)val)->op_type;
+            ((Instruction_Unary *)vv)->oprend =
+                new_use(mapping[s->oprend->v], vv);
+        } break;
 
-            case INST_RETURN: {
-                auto s = (Instruction_Return *)val;
-                auto ret = new Instruction_Return;
-                vv = ret;
+        case INST_RETURN: {
+            auto s = (Instruction_Return *)val;
+            auto ret = new Instruction_Return;
+            vv = ret;
 
-                if (s->return_value) {
-                    ret->return_value = new_use(mapping[s->return_value->v], vv);
-                }
+            if (s->return_value) {
+                ret->return_value = new_use(mapping[s->return_value->v], vv);
+            }
 
-            } break;
+        } break;
 
-            case INST_BRANCH: {
-                auto s = (Instruction_Branch *)val;
-                auto br = new Instruction_Branch;
-                vv = br;
+        case INST_BRANCH: {
+            auto s = (Instruction_Branch *)val;
+            auto br = new Instruction_Branch;
+            vv = br;
 
-                br->cond = new_use(mapping[s->cond->v], vv);
+            br->cond = new_use(mapping[s->cond->v], vv);
 
-            } break;
+        } break;
 
-            case INST_DIRECT_BRANCH: {
-                vv = (Value *)new Instruction_Direct_Branch;
-                vv->b = block;
-                ((Instruction_Direct_Branch *)vv)->target = NULL;
-            } break;
+        case INST_DIRECT_BRANCH: {
+            vv = (Value *)new Instruction_Direct_Branch;
+            vv->b = block;
+            ((Instruction_Direct_Branch *)vv)->target = NULL;
+        } break;
 
-            case MEMORY_READ: {
-                auto s = ((Memory_Read *)val);
-                auto read = new Memory_Read;
-                vv = read;
+        case MEMORY_READ: {
+            auto s = ((Memory_Read *)val);
+            auto read = new Memory_Read;
+            vv = read;
 
-                read->decl = s->decl;
-                read->base = new_use(mapping[s->base->v], vv);
+            read->decl = s->decl;
+            read->base = new_use(mapping[s->base->v], vv);
 
-                if (s->offset) {
-                    read->offset = new_use(mapping[s->offset->v], vv);
-                }
+            if (s->offset) {
+                read->offset = new_use(mapping[s->offset->v], vv);
+            }
 
-                if (s->mem_ver) {
-                    read->mem_ver = new_use(mapping[s->mem_ver->v], vv);
-                }
+            if (s->mem_ver) {
+                read->mem_ver = new_use(mapping[s->mem_ver->v], vv);
+            }
 
-            } break;
+        } break;
 
-            case MEMORY_WRITE: {
-                auto s = ((Memory_Write *)val);
-                auto write = new Memory_Write;
-                vv = write;
+        case MEMORY_WRITE: {
+            auto s = ((Memory_Write *)val);
+            auto write = new Memory_Write;
+            vv = write;
 
-                write->decl = s->decl;
-                write->base = new_use(mapping[s->base->v], vv);
+            write->decl = s->decl;
+            write->base = new_use(mapping[s->base->v], vv);
 
-                if (s->offset) {
-                    write->offset = new_use(mapping[s->offset->v], vv);
-                }
+            if (s->offset) {
+                write->offset = new_use(mapping[s->offset->v], vv);
+            }
 
-                if (s->value_to_write) {
-                    write->value_to_write = new_use(mapping[s->value_to_write->v], vv);
-                }
+            if (s->value_to_write) {
+                write->value_to_write =
+                    new_use(mapping[s->value_to_write->v], vv);
+            }
 
-            } break;
+        } break;
 
-            case ALLOCA: {
-                auto s = ((Alloca *)val);
-                vv = (Value *)new Alloca;
-                ((Alloca *)vv)->size = new_use(mapping[s->size->v], vv);
-                ((Alloca *)vv)->decl = s->decl;
-            } break;
+        case ALLOCA: {
+            auto s = ((Alloca *)val);
+            vv = (Value *)new Alloca;
+            ((Alloca *)vv)->size = new_use(mapping[s->size->v], vv);
+            ((Alloca *)vv)->decl = s->decl;
+        } break;
 
-            case FUNCTION_CALL: {
-                auto s = (Function_Call *)val;
-                auto call = new Function_Call;
-                vv = call;
+        case FUNCTION_CALL: {
+            auto s = (Function_Call *)val;
+            auto call = new Function_Call;
+            vv = call;
 
-                call->has_return_value = s->has_return_value;
-                call->f      = s->f;
-                call->caller = s->caller;
-                call->name   = s->name;
+            call->has_return_value = s->has_return_value;
+            call->f = s->f;
+            call->caller = s->caller;
+            call->name = s->name;
 
-                for (auto zhi : s->arguments) {
-                    call->arguments.push(new_use(mapping[zhi->v], vv));
-                }
+            for (auto zhi : s->arguments) {
+                call->arguments.push(new_use(mapping[zhi->v], vv));
+            }
 
-            } break;
-            
-            default: assert(false);
+        } break;
 
+        default:
+            assert(false);
         }
 
         vv->type = val->type;
@@ -254,20 +255,22 @@ Procedure_IR *copy_function(Procedure_IR *f) {
     dfs_copy(f->start_block, &new_f->blocks, f);
 
     new_f->start_block = map_block[f->start_block];
-    new_f->exit_block  = map_block[f->exit_block];
+    new_f->exit_block = map_block[f->exit_block];
 
     seal_copy_cfg(f->blocks);
 
-    for(int i = 0; i < f->args_count; i++) {
+    for (int i = 0; i < f->args_count; i++) {
         auto new_arg = (Argument *)mapping[f->arguments[i]];
         new_f->arguments.push(new_arg);
     }
 
-    for(auto bb : new_f->blocks) {
-        for(auto v : bb->insts) {
+    for (auto bb : new_f->blocks) {
+        for (auto v : bb->insts) {
             if (auto call = v->as<Function_Call>()) {
-                if (call->f == f) call->f = new_f;
-                if (call->caller == f) call->caller = new_f;
+                if (call->f == f)
+                    call->f = new_f;
+                if (call->caller == f)
+                    call->caller = new_f;
             }
         }
     }

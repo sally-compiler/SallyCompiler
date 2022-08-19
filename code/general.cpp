@@ -23,9 +23,9 @@ void String_Builder::append(const char *s, ...) {
     va_end(args);
 
     // @note: +1 for \0
-    buffer.maygrow(len+1);
-    //strcpy_s(buffer.a+buffer.len, len, buf);
-    strcpy(buffer.a+buffer.len, buf);
+    buffer.maygrow(len + 1);
+    // strcpy_s(buffer.a+buffer.len, len, buf);
+    strcpy(buffer.a + buffer.len, buf);
     buffer.len += len;
 }
 
