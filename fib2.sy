@@ -1,0 +1,14 @@
+int fib(int n) {
+    int a = 1, b = 1;
+    int i = 0;
+    while (i < 10) {
+        putint(i);
+        i = i + 1;
+    }
+    return i;
+}
+
+int main() {
+    putint(fib(44)); putch(10);
+    return 0;
+}

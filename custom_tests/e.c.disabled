@@ -1,0 +1,50 @@
+int
+add (int a, int b)
+{
+  return a + b;
+}
+
+void
+sha1 (int len, int out[])
+{
+  int a1;
+  int a2;
+  int a3;
+  int a4;
+  int a5;
+
+  int a;
+  int b;
+  int c;
+  int d;
+  int e;
+
+  while (len + 1 != 16)
+    {
+      len = len + 1;
+    }
+
+  int k[4];
+
+  while (a < len)
+    {
+      int i = 0;
+      while (i < 4)
+        {
+          a = a + e + b + k[i];
+          e = d;
+          d = c;
+          c = add (d, a);
+          i = i + 1;
+        }
+      a1 = a1 + a;
+      a2 = a2 + a;
+      a3 = a3 + c;
+      a4 = a4 + d;
+      a5 = a5 + e;
+    }
+  out[0] = a1;
+  out[1] = a2;
+  out[2] = a3;
+  out[3] = a4;
+}

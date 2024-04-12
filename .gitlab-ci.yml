@@ -1,0 +1,16 @@
+functional_tests:
+    script:
+        - git log -1
+        - ./compile.sh
+        - python3 misc/test.py -a -d custom_tests
+        - python3 misc/test.py -a -d tests
+    tags:
+        - pi
+
+perf_tests:
+    script:
+        - git log -1
+        - ./compile.sh
+        - python3 misc/test.py -a -p -d perf_tests
+    tags:
+        - perfpi
